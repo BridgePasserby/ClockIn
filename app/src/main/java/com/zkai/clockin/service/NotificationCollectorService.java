@@ -1,6 +1,10 @@
 package com.zkai.clockin.service;
 
+import android.annotation.SuppressLint;
+import android.content.Intent;
+import android.os.Binder;
 import android.os.Build;
+import android.os.IBinder;
 import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
 import android.support.annotation.RequiresApi;
@@ -19,18 +23,21 @@ import com.zkai.clockin.utils.QQConstant;
  * date：2017/6/26
  * description：
  */
-
+@SuppressLint("OverrideAbstract")
 @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
 public class NotificationCollectorService extends NotificationListenerService {
     private static final String TAG = "NotificationCollectorService";
+    private IQQMsg iqqMsg;
+
+    public void setIqqMsgListener(IQQMsg iqqMsg) {
+        this.iqqMsg = iqqMsg;
+    }
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
     public void onNotificationPosted(StatusBarNotification sbn) {
-
         String packageName = sbn.getPackageName();
         Toast.makeText(NotificationCollectorService.this, packageName, Toast.LENGTH_LONG).show();
-
         Log.i(TAG, "kai ---- onNotificationPosted packageName ----> " + packageName);
         if (PackageName.PN_QQ.endsWith(packageName)) {
             dealQQMsg(sbn);
@@ -69,6 +76,31 @@ public class NotificationCollectorService extends NotificationListenerService {
     
     public interface IQQMsg {
         void onFetch(StatusBarNotification sbn);
+    }
+
+    @Override
+    public void onCreate() {
+        Log.i(TAG, "onCreate() called");
+        super.onCreate();
+    }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        Log.i(TAG, "onStartCommand() called with: intent = [" + intent + "], flags = [" + flags + "], startId = [" + startId + "]");
+        return super.onStartCommand(intent, flags, startId);
+        
+    }
+
+    @Override
+    public IBinder onBind(Intent intent) {
+        Log.i(TAG, "onBind() called with: intent = [" + intent + "]");
+        return new NotifiBinder();
+    }
+
+    public class NotifiBinder extends Binder {
+        public NotificationCollectorService getMyService() {
+            return NotificationCollectorService.this;
+        }
     }
 
 }

@@ -3,10 +3,14 @@ package com.zkai.clockin;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.IBinder;
 import android.provider.Settings;
+import android.service.notification.StatusBarNotification;
+import android.support.annotation.RequiresApi;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.util.Log;
@@ -71,7 +75,6 @@ public class MainActivity extends AppCompatActivity {
         tvQQMsg = (TextView) findViewById(R.id.tv_qq_msg);
     }
 
-
     private void createClockInBroadCast() {
         AlarmBroadcastReceiver alarmBroadcastReceiver = new AlarmBroadcastReceiver();
         IntentFilter filter = new IntentFilter();
@@ -116,6 +119,8 @@ public class MainActivity extends AppCompatActivity {
             notificaionIntent = new Intent(MainActivity.this,
                     NotificationCollectorService.class);
             startService(notificaionIntent);
+            Log.i(TAG, "startNotificationListenService: ");
+//            bindService(notificaionIntent, new NotificationConnection(), Context.BIND_AUTO_CREATE);
             Toast.makeText(MainActivity.this, "开启成功", Toast.LENGTH_SHORT).show();
         } else {
             Toast.makeText(MainActivity.this, "手机的系统不支持此功能", Toast.LENGTH_SHORT).show();
@@ -131,4 +136,28 @@ public class MainActivity extends AppCompatActivity {
         }
         super.onDestroy();
     }
+    
+    class NotificationConnection implements  ServiceConnection{
+        @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
+        @Override
+        public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
+            NotificationCollectorService myService = ((NotificationCollectorService.NotifiBinder) iBinder).getMyService();
+            myService.setIqqMsgListener(new NotificationCollectorService.IQQMsg() {
+                @Override
+                public void onFetch(StatusBarNotification sbn) {
+                    String nickName = (String) sbn.getNotification().extras.get("android.title");
+                    String msg = (String) sbn.getNotification().extras.get("android.text");
+                    tvQQMsg.setText("title:" + nickName + "\nmsg:" + msg);
+                    Log.i(TAG, "onFetch: " + "title:" + nickName + "\nmsg:" + msg);
+                }
+            });
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName componentName) {
+
+        }
+    }
+    
+    
 }
