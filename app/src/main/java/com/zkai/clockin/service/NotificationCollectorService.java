@@ -1,8 +1,5 @@
 package com.zkai.clockin.service;
 
-import android.annotation.SuppressLint;
-import android.app.ActivityManager;
-import android.content.Context;
 import android.os.Build;
 import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
@@ -16,8 +13,6 @@ import com.zkai.clockin.utils.CmdUtils;
 import com.zkai.clockin.utils.PackageName;
 import com.zkai.clockin.utils.QQConstant;
 
-import java.lang.reflect.Method;
-
 /**
  * Copyright (c) 2017,xxxxxx All rights reserved.
  * author：Z.kai
@@ -25,7 +20,6 @@ import java.lang.reflect.Method;
  * description：
  */
 
-@SuppressLint("OverrideAbstract")
 @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
 public class NotificationCollectorService extends NotificationListenerService {
     private static final String TAG = "NotificationCollectorService";
