@@ -1,15 +1,16 @@
 package com.zkai.clockin;
 
+import android.app.ActivityManager;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.provider.Settings;
-import android.service.notification.StatusBarNotification;
-import android.support.annotation.RequiresApi;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -24,6 +25,9 @@ import com.zkai.clockin.broadcast.AlarmBroadcastReceiver;
 import com.zkai.clockin.service.NotificationCollectorService;
 import com.zkai.clockin.utils.QQConstant;
 
+import java.util.HashMap;
+import java.util.List;
+
 public class MainActivity extends AppCompatActivity {
     
     private static final String TAG = "MainActivity";
@@ -32,7 +36,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String ENABLED_NOTIFICATION_LISTENERS = "enabled_notification_listeners";
     private Button btnStartService;
     private EditText etReceiveName;
-    private Intent notificaionIntent;
+    private Intent notificationIntent;
     private TextView tvQQMsg;
 
     @Override
@@ -47,6 +51,8 @@ public class MainActivity extends AppCompatActivity {
         btnStartService.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                boolean serviceRunning = isServiceRunning(MainActivity.this, "com.zkai.clockin.service.NotificationCollectorService");
+                Log.i(TAG,"kai ---- onClick serviceRunning ----> " + serviceRunning);
                 String receiveName = etReceiveName.getText().toString();
                 if (TextUtils.isEmpty(receiveName)){
                     Toast.makeText(MainActivity.this, "名字不能为空", Toast.LENGTH_LONG).show();
@@ -117,9 +123,9 @@ public class MainActivity extends AppCompatActivity {
 
     private void startNotificationListenService() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
-            notificaionIntent = new Intent(MainActivity.this,
-                    NotificationCollectorService.class);
-            startService(notificaionIntent);
+            notificationIntent = new Intent(MainActivity.this,NotificationCollectorService.class);
+            startService(notificationIntent);
+            toggleNotificationListenerService();
             Toast.makeText(MainActivity.this, "开启成功", Toast.LENGTH_SHORT).show();
         } else {
             Toast.makeText(MainActivity.this, "手机的系统不支持此功能", Toast.LENGTH_SHORT).show();
@@ -130,9 +136,32 @@ public class MainActivity extends AppCompatActivity {
     protected void onDestroy() {
         Toast.makeText(App.getContext(), "销毁服务", Toast.LENGTH_SHORT).show();
         Log.i(TAG, "kai ---- onDestroy  ----> 销毁服务");
-        if (notificaionIntent != null) {
-            stopService(notificaionIntent);
+        if (notificationIntent != null) {
+            stopService(notificationIntent);
         }
         super.onDestroy();
     }
+
+    public static boolean isServiceRunning(Context context, String serviceName) {
+        ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        List<ActivityManager.RunningServiceInfo> runningServiceInfos = am.getRunningServices(200);
+        if (runningServiceInfos.size() <= 0) {
+            return false;
+        }
+        for (ActivityManager.RunningServiceInfo serviceInfo : runningServiceInfos) {
+            if (serviceInfo.service.getClassName().equals(serviceName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void toggleNotificationListenerService() {
+        PackageManager pm = getPackageManager();
+        pm.setComponentEnabledSetting(new ComponentName(this, NotificationCollectorService.class),
+                PackageManager.COMPONENT_ENABLED_STATE_DISABLED, PackageManager.DONT_KILL_APP);
+        pm.setComponentEnabledSetting(new ComponentName(this, NotificationCollectorService.class),
+                PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP);
+    }
+
 }
