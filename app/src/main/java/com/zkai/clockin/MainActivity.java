@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
 import android.provider.Settings;
@@ -14,6 +15,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -21,11 +23,16 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.zkai.clockin.broadcast.AlarmBroadcastReceiver;
+import com.zkai.clockin.broadcast.CustomBroadcastAction;
 import com.zkai.clockin.service.NotificationCollectorService;
+import com.zkai.clockin.utils.CreateCmdUtils;
 import com.zkai.clockin.utils.PackageName;
 import com.zkai.clockin.utils.QQConstant;
 import com.zkai.clockin.utils.RootShellCmdUtils;
 
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
@@ -40,19 +47,24 @@ public class MainActivity extends AppCompatActivity {
     private TextView tvQQMsg;
     private Button btnTestAdb;
     private StringBuffer sbReceiveMsg;
+    private BroadcastReceiver qqReceiver;
+    private BroadcastReceiver dingReceiver;
+    private Handler handler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        handler = new Handler();
         initView();
         setListener();
+        initReceiver();
         registerReceiver();
         sbReceiveMsg = new StringBuffer();
     }
 
-    private void registerReceiver() {
-        registerReceiver(new BroadcastReceiver() {
+    private void initReceiver() {
+        qqReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
                 Bundle extras = intent.getExtras();
@@ -61,8 +73,56 @@ public class MainActivity extends AppCompatActivity {
                 sbReceiveMsg.append("\nTitle:").append(title)
                         .append("\nMsg:").append(msg);
                 tvQQMsg.setText(sbReceiveMsg.toString());
+                RootShellCmdUtils.openApp(App.getContext(),PackageName.PN_DING_TALK);
             }
-        }, new IntentFilter("com.zkai.clockin.notify"));
+        };
+        dingReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                Bundle extras = intent.getExtras();
+                String msg = extras.getString("msg");
+                Log.i(TAG, "kai ---- onReceive msg.contains(\"打卡正常\") ----> " + msg.contains("打卡正常"));
+                long l = System.currentTimeMillis();
+                SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                String format = simpleDateFormat.format(new Date(l));
+                msg = format + msg + "CLOCKINSUCCESSED";
+                if (!TextUtils.isEmpty(msg) && msg.contains("打卡 正常") || msg.contains("考勤打卡")) {
+
+                    RootShellCmdUtils.openApp(App.getContext(), PackageName.PN_MY);
+                    final String finalMsg = msg;
+                    handler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            String url = "mqqwpa://im/chat?chat_type=wpa&uin=1259583420";
+                            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+                            String[] cmds = new String[11];
+                            cmds[0] = CreateCmdUtils.createEventTap(CreateCmdUtils.QQ_EDIT_TEXT);
+                            cmds[1] = CreateCmdUtils.createSleep(1);
+                            cmds[2] = CreateCmdUtils.createInputText(finalMsg);
+                            cmds[3] = CreateCmdUtils.createSleep(1);
+                            cmds[4] = CreateCmdUtils.createEventTap(CreateCmdUtils.QQ_SEND_BUTTON);
+                            cmds[5] = CreateCmdUtils.createSleep(1);
+                            cmds[6] = CreateCmdUtils.createEventKey(KeyEvent.KEYCODE_BACK);
+                            cmds[7] = CreateCmdUtils.createSleep(1);
+                            cmds[8] = CreateCmdUtils.createEventKey(KeyEvent.KEYCODE_BACK);
+                            cmds[9] = CreateCmdUtils.createSleep(1);
+                            cmds[10] = CreateCmdUtils.createEventKey(KeyEvent.KEYCODE_BACK);
+                            Log.i(TAG, "kai ---- onReceive cmds ----> " + Arrays.toString(cmds));
+                            RootShellCmdUtils.exec(cmds);
+                        }
+                    }, 3000);
+
+                    
+                   
+                }
+            }
+        };
+    }
+
+    private void registerReceiver() {
+        registerReceiver(qqReceiver, new IntentFilter(CustomBroadcastAction.ACTION_RECEIVE_QQ_MSG));
+        registerReceiver(dingReceiver, new IntentFilter(CustomBroadcastAction.ACTION_RECEIVE_DING_TALK_MSG));
+
     }
 
     private void setListener() {
@@ -142,7 +202,6 @@ public class MainActivity extends AppCompatActivity {
         return false;
     }
 
-
     private void openNotificationAccess() {
         startActivity(new Intent(ACTION_NOTIFICATION_LISTENER_SETTINGS));
     }
@@ -189,5 +248,14 @@ public class MainActivity extends AppCompatActivity {
         pm.setComponentEnabledSetting(new ComponentName(this, NotificationCollectorService.class),
                 PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP);
     }
+
+//    public void clip() {
+//        // 从API11开始android推荐使用android.content.ClipboardManager
+//        // 为了兼容低版本我们这里使用旧版的android.text.ClipboardManager，虽然提示deprecated，但不影响使用。
+//        ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+//        // 将文本内容放到系统剪贴板里。
+//        cm.setPrimaryClip(tvMsg.getText());
+//        Toast.makeText(this, "复制成功，可以发给朋友们了。", Toast.LENGTH_LONG).show();
+//    }
 
 }

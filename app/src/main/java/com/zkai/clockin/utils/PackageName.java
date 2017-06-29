@@ -11,5 +11,6 @@ public class PackageName {
     
     public static final String PN_DING_TALK = "com.alibaba.android.rimet";
     public static final String PN_QQ = "com.tencent.mobileqq";
+    public static final String PN_MY = "com.zkai.clockin";
     
 }

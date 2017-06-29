@@ -4,7 +4,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.util.Log;
-import android.view.KeyEvent;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -26,7 +25,7 @@ public class RootShellCmdUtils {
      *
      * @param cmd adb 命令，eg:input keyevent 4
      */
-    private static void exec(String cmd) {
+    public static void exec(String cmd) {
         Log.i(TAG,"kai ---- exec cmd ----> " + cmd);
         try {
             os = Runtime.getRuntime().exec("su").getOutputStream();
@@ -44,25 +43,66 @@ public class RootShellCmdUtils {
                 e.printStackTrace();
             }
         }
+    }    
+    
+    public static void exec(String[] commands) {
+        Log.i(TAG,"kai ---- exec commands ----> " + commands);
+        
+        try {
+            os = Runtime.getRuntime().exec("su").getOutputStream();
+            for (String command : commands) {
+                if (command == null) {
+                    continue;
+                }
+                os.write(command.getBytes());
+                os.flush();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (os != null) {
+                    os.close();
+                    os = null;
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
-    /**
-     * 模拟按键 
-     *
-     * @param keyCode 键值{@link KeyEvent.KEYCODE_BACK}
-     */
-    public final void simulateKey(int keyCode) {
-        exec("input keyevent " + keyCode + "\n");
-    }
+//    /**
+//     * 模拟按键 
+//     *
+//     * @param keyCode 键值{@link KeyEvent.KEYCODE_BACK}
+//     */
+//    public final void simulateKey(int keyCode) {
+//        exec("input keyevent " + keyCode + "\n");
+//    }
 
-    /**
-     * 模拟轻触(点击)事件
-     * @param x x坐标
-     * @param y y坐标
-     */
-    public static void simulateTap(int x, int y) {
-        exec("input tap " + x + " " + y + "\n");
-    }
+//    /**
+//     * 模拟轻触(点击)事件
+//     *
+//     * @param x x坐标
+//     * @param y y坐标
+//     */
+//    public static void simulateTap(int x, int y) {
+//        exec("input tap " + x + " " + y + "\n");
+//    }
+
+//    public static void simulateTap(int[] position) {
+//        int x = position[0];
+//        int y = position[1];
+//        exec("input tap " + x + " " + y + "\n");
+//    }
+
+//    /**
+//     * 输入文字
+//     * @param msg 文字信息
+//     */
+//    public static void inputText(String msg){
+//        exec("input text " + msg + "\n");
+//    }
 
 
     public final void checkFocusActivity() {
@@ -70,9 +110,9 @@ public class RootShellCmdUtils {
     }
 
 
-    public static void openDingTalk(Context context) {
+    public static void openApp(Context context, String packageName) {
         PackageManager packageManager = context.getPackageManager();
-        Intent intent = packageManager.getLaunchIntentForPackage(PackageName.PN_DING_TALK);
+        Intent intent = packageManager.getLaunchIntentForPackage(packageName);
         if (intent == null) {
             return;
         }
@@ -85,7 +125,7 @@ public class RootShellCmdUtils {
                 rootShellCmd = new RootShellCmdUtils();
             }
 //            rootShellCmd.simulateKey(KeyEvent.KEYCODE_BACK);
-            rootShellCmd.simulateTap(300,300);
+//            simulateTap(300,300);
         
 //            Process p = Runtime.getRuntime().exec("su");
 //            String adb = "adb shell am start -n \"%s\"";

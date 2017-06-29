@@ -7,12 +7,15 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
 import android.text.TextUtils;
 import android.util.Log;
 
 import com.zkai.clockin.App;
+import com.zkai.clockin.broadcast.CustomBroadcastAction;
+import com.zkai.clockin.utils.CreateCmdUtils;
 import com.zkai.clockin.utils.PackageName;
 import com.zkai.clockin.utils.QQConstant;
 import com.zkai.clockin.utils.RootShellCmdUtils;
@@ -42,25 +45,29 @@ public class NotificationCollectorService extends NotificationListenerService {
         }
     }
 
+    @Override
+    public void onNotificationRemoved(StatusBarNotification sbn) {
+        Log.i("kai", "remove" + "-----" + sbn.getPackageName());
+
+    }
+
+
     @TargetApi(Build.VERSION_CODES.KITKAT)
     private void dealDingMsg(StatusBarNotification sbn) {
-        String nickName = (String) sbn.getNotification().extras.get("android.title");
+        String title = (String) sbn.getNotification().extras.get("android.title");
         String msg = (String) sbn.getNotification().extras.get("android.text");
-        Log.i(TAG, "kai ---- dealDingMsg nickName ----> " + nickName);
+        Log.i(TAG, "kai ---- dealDingMsg title ----> " + title);
         Log.i(TAG, "kai ---- dealDingMsg msg ----> " + msg);
+        if (TextUtils.isEmpty(title)) {
+            return;
+        }
+        sendBroadcastWithArgs(CustomBroadcastAction.ACTION_RECEIVE_DING_TALK_MSG, title, msg);
     }
 
     @TargetApi(Build.VERSION_CODES.KITKAT)
     private void dealQQMsg(StatusBarNotification sbn) {
         String title = (String) sbn.getNotification().extras.get("android.title");
         String msg = (String) sbn.getNotification().extras.get("android.text");
-        Intent intent = new Intent();
-        intent.setAction("com.zkai.clockin.notify");
-        Bundle bundle = new Bundle();
-        bundle.putString("title", title);
-        bundle.putString("msg", msg);
-        intent.putExtras(bundle);
-        sendBroadcast(intent);
         Log.i(TAG, "kai ---- dealQQMsg title ----> " + title);
         Log.i(TAG, "kai ---- dealQQMsg msg ----> " + msg);
         if (TextUtils.isEmpty(title)) {
@@ -68,28 +75,24 @@ public class NotificationCollectorService extends NotificationListenerService {
         }
         if (title.contains(QQConstant.nickName)) {
             if (QQConstant.CLOCK_IN.equals(msg)) {
-//                CmdUtils.execStartApp(PackageName.PN_DING_TALK);
-                RootShellCmdUtils.openDingTalk(App.getContext());
+                sendBroadcastWithArgs(CustomBroadcastAction.ACTION_RECEIVE_QQ_MSG, title, msg);
             } else if (QQConstant.STOP_DING_TALK.equals(msg)) {
-                ActivityManager am = (ActivityManager)getSystemService(Context.ACTIVITY_SERVICE);
-////                am.killBackgroundProcesses(PackageName.PN_DING_TALK);
-//                try {
-//                    Class<?> aClass = Class.forName("android.app.ActivityManager");
-//                    Method method = aClass.getMethod("forceStopPackage", String.class);
-//                    method.invoke(am, PackageName.PN_DING_TALK);
-//                } catch (Exception e) {
-//                    e.printStackTrace();
-//                }
-            } else {
-                RootShellCmdUtils.simulateTap(300, 300);
+                // TODO: 2017/6/29 退出钉钉 by Z.kai
+
+            } else if (1 == 2) {
+                RootShellCmdUtils.exec(CreateCmdUtils.createEventTap(300, 300));
             }
         }
     }
 
-    @Override
-    public void onNotificationRemoved(StatusBarNotification sbn) {
-        Log.i("kai", "remove" + "-----" + sbn.getPackageName());
-
+    private void sendBroadcastWithArgs(String action, String title, String msg) {
+        Intent intent = new Intent();
+        intent.setAction(action);
+        Bundle bundle = new Bundle();
+        bundle.putString("title", title);
+        bundle.putString("msg", msg);
+        intent.putExtras(bundle);
+        sendBroadcast(intent);
     }
-    
+
 }
