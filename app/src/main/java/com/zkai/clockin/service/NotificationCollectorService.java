@@ -77,6 +77,7 @@ public class NotificationCollectorService extends NotificationListenerService {
             if (QQConstant.CLOCK_IN.equals(msg)) {
                 sendBroadcastWithArgs(CustomBroadcastAction.ACTION_RECEIVE_QQ_MSG, title, msg);
             } else if (QQConstant.STOP_DING_TALK.equals(msg)) {
+                RootShellCmdUtils.exec(CreateCmdUtils.createStopApp(PackageName.PN_DING_TALK));
                 // TODO: 2017/6/29 退出钉钉 by Z.kai
 
             } else if (1 == 2) {

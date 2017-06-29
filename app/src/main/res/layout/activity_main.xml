@@ -30,7 +30,14 @@
         android:id="@+id/btn_start_service"
         android:layout_width="match_parent"
         android:layout_height="50dp"
+        android:textColor="@color/colorGreen"
         android:text="START SERVICE" />
+    <Button
+        android:id="@+id/btn_stop_service"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:textColor="@color/colorRed"
+        android:text="STOP SERVICE" />
 
     <Button
         android:id="@+id/btn_test_adb"

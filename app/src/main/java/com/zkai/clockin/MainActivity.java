@@ -50,6 +50,7 @@ public class MainActivity extends AppCompatActivity {
     private BroadcastReceiver qqReceiver;
     private BroadcastReceiver dingReceiver;
     private Handler handler;
+    private Button btnStopService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,14 +82,13 @@ public class MainActivity extends AppCompatActivity {
             public void onReceive(Context context, Intent intent) {
                 Bundle extras = intent.getExtras();
                 String msg = extras.getString("msg");
-                Log.i(TAG, "kai ---- onReceive msg.contains(\"打卡正常\") ----> " + msg.contains("打卡正常"));
+                Log.i(TAG, "kai ---- onReceive msg.contains(\"打卡 正常\") ----> " + msg.contains("打卡 正常"));
                 long l = System.currentTimeMillis();
                 SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                 String format = simpleDateFormat.format(new Date(l));
                 msg = format + msg + "CLOCKINSUCCESSED";
                 if (!TextUtils.isEmpty(msg) && msg.contains("打卡 正常") || msg.contains("考勤打卡")) {
-
-                    RootShellCmdUtils.openApp(App.getContext(), PackageName.PN_MY);
+                    RootShellCmdUtils.exec(CreateCmdUtils.createStopApp(PackageName.PN_DING_TALK));
                     final String finalMsg = msg;
                     handler.postDelayed(new Runnable() {
                         @Override
@@ -111,8 +111,6 @@ public class MainActivity extends AppCompatActivity {
                             RootShellCmdUtils.exec(cmds);
                         }
                     }, 3000);
-
-                    
                    
                 }
             }
@@ -151,6 +149,15 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+        btnStopService.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (notificationIntent != null) {
+                    stopService(notificationIntent);
+                    Toast.makeText(MainActivity.this, "已关闭服务", Toast.LENGTH_LONG).show();
+                }
+            }
+        });
         btnTestAdb.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -162,6 +169,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void initView() {
         btnStartService = (Button) findViewById(R.id.btn_start_service);
+        btnStopService = (Button) findViewById(R.id.btn_stop_service);
         etReceiveName = (EditText) findViewById(R.id.et_receive_name);
         btnTestAdb = (Button) findViewById(R.id.btn_test_adb);
         tvQQMsg = (TextView) findViewById(R.id.tv_qq_msg);
