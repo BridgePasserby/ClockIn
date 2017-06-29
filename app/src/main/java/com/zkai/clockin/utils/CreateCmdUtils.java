@@ -44,6 +44,11 @@ public class CreateCmdUtils {
         }
         return "sleep " + sec + "\n";
     }
+    
+    public static String createStopApp(String packageName){
+        return "am force-stop " + packageName;
+    }
+    
 
 
     /**
