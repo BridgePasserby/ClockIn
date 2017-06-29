@@ -1,15 +1,14 @@
 package com.zkai.clockin;
 
 import android.app.ActivityManager;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Handler;
-import android.os.IBinder;
 import android.provider.Settings;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -23,9 +22,10 @@ import android.widget.Toast;
 
 import com.zkai.clockin.broadcast.AlarmBroadcastReceiver;
 import com.zkai.clockin.service.NotificationCollectorService;
+import com.zkai.clockin.utils.PackageName;
 import com.zkai.clockin.utils.QQConstant;
+import com.zkai.clockin.utils.RootShellCmdUtils;
 
-import java.util.HashMap;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
@@ -38,6 +38,8 @@ public class MainActivity extends AppCompatActivity {
     private EditText etReceiveName;
     private Intent notificationIntent;
     private TextView tvQQMsg;
+    private Button btnTestAdb;
+    private StringBuffer sbReceiveMsg;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,6 +47,22 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         initView();
         setListener();
+        registerReceiver();
+        sbReceiveMsg = new StringBuffer();
+    }
+
+    private void registerReceiver() {
+        registerReceiver(new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                Bundle extras = intent.getExtras();
+                String title = (String) extras.get("title");
+                String msg = (String) extras.get("msg");
+                sbReceiveMsg.append("\nTitle:").append(title)
+                        .append("\nMsg:").append(msg);
+                tvQQMsg.setText(sbReceiveMsg.toString());
+            }
+        }, new IntentFilter("com.zkai.clockin.notify"));
     }
 
     private void setListener() {
@@ -73,11 +91,19 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+        btnTestAdb.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String s = RootShellCmdUtils.execStartApp(PackageName.PN_DING_TALK);
+                Log.i(TAG,"kai ---- onClick s ----> " + s);
+            }
+        });
     }
 
     private void initView() {
         btnStartService = (Button) findViewById(R.id.btn_start_service);
         etReceiveName = (EditText) findViewById(R.id.et_receive_name);
+        btnTestAdb = (Button) findViewById(R.id.btn_test_adb);
         tvQQMsg = (TextView) findViewById(R.id.tv_qq_msg);
     }
 
