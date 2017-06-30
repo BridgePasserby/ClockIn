@@ -1,6 +1,7 @@
 package com.zkai.clockin.utils;
 
 import android.text.TextUtils;
+import android.util.Log;
 
 /**
  * Copyright (c) 2017,xxxxxx All rights reserved.
@@ -10,9 +11,10 @@ import android.text.TextUtils;
  */
 
 public class CreateCmdUtils {
+    private static final String TAG = "CreateCmdUtils";
     public static final int[] QQ_EDIT_TEXT = {300, 1165};
     public static final int[] QQ_SEND_BUTTON = {662, 662};
-    private static final String TAG = "CreateCmdUtils";
+    
     public static String createEventKey(int keycode) {
         return "input keyevent " + keycode + "\n";
     }
@@ -34,6 +36,7 @@ public class CreateCmdUtils {
         if (TextUtils.isEmpty(text)) {
             return null;
         }
+        text = PinYin.getPinYin(text);
         text = dropChinese(text);
         text = text.replace(" ", "");
         return "input text " + text + "\n";
@@ -44,15 +47,19 @@ public class CreateCmdUtils {
         }
         return "sleep " + sec + "\n";
     }
-    
-    public static String createStopApp(String packageName){
+
+    public static String createStopApp(String packageName) {
         return "am force-stop " + packageName;
     }
+
+    public static String createOpenQQ() {
+        return "am start -n com.tencent.mobileqq/.activity.SplashActivity";
+    }
     
-
-
+    
+    
     /**
-     *  把中文转成Unicode码
+     *  去除中文
      *  @param str
      *  @return
      * */
@@ -67,21 +74,7 @@ public class CreateCmdUtils {
         }
         return result;
     }
-
-
-
-    // 完整的判断中文汉字和符号
-    public static boolean isChinese(String strName) {
-        char[] ch = strName.toCharArray();
-        for (int i = 0; i < ch.length; i++) {
-            char c = ch[i];
-            if (isChinese(c)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
+    
     /**
      * 判断是否为中文字符
      *
@@ -100,7 +93,5 @@ public class CreateCmdUtils {
         }
         return false;
     }
- 
-    
 
 }

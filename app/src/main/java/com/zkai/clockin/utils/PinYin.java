@@ -15,12 +15,12 @@ public class PinYin {
 		if (tokens != null && tokens.size() > 0) {
 			for (Token token : tokens) {
 				if (Token.PINYIN == token.type) {
-					sb.append(token.target);
+					sb.append(token.target.toLowerCase()).append(",");
 				} else {
 					sb.append(token.source);
 				}
 			}
 		}
-		return sb.toString().toLowerCase();
+		return sb.append(".").toString();
 	}
 }
