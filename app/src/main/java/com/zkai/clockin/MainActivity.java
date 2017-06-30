@@ -26,13 +26,12 @@ import com.zkai.clockin.broadcast.AlarmBroadcastReceiver;
 import com.zkai.clockin.broadcast.CustomBroadcastAction;
 import com.zkai.clockin.service.NotificationCollectorService;
 import com.zkai.clockin.utils.CreateCmdUtils;
+import com.zkai.clockin.utils.MsgConstant;
 import com.zkai.clockin.utils.PackageName;
-import com.zkai.clockin.utils.QQConstant;
 import com.zkai.clockin.utils.RootShellCmdUtils;
+import com.zkai.clockin.utils.TimeUtils;
 
-import java.text.SimpleDateFormat;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
@@ -69,52 +68,97 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onReceive(Context context, Intent intent) {
                 Bundle extras = intent.getExtras();
-                String title = (String) extras.get("title");
-                String msg = (String) extras.get("msg");
-                sbReceiveMsg.append("\nTitle:").append(title)
-                        .append("\nMsg:").append(msg);
-                tvQQMsg.setText(sbReceiveMsg.toString());
-                RootShellCmdUtils.openApp(App.getContext(),PackageName.PN_DING_TALK);
+                String title = (String) extras.get("android.title");
+                String msg = (String) extras.get("android.text");
+                if (TextUtils.isEmpty(msg)) {
+                    Toast.makeText(App.getContext(), "消息内容为空", Toast.LENGTH_SHORT).show();
+                } else {
+                    String currentTime = TimeUtils.getCurrentTimeStr();
+                    sbReceiveMsg.append("\nTime:").append(currentTime)
+                            .append("\nTitle:").append(title)
+                            .append("\nMsg:").append(msg);
+                    tvQQMsg.setText(sbReceiveMsg.toString());
+                    dealQQMsg(msg);
+                }
             }
         };
         dingReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
                 Bundle extras = intent.getExtras();
-                String msg = extras.getString("msg");
-                Log.i(TAG, "kai ---- onReceive msg.contains(\"打卡 正常\") ----> " + msg.contains("打卡 正常"));
-                long l = System.currentTimeMillis();
-                SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                String format = simpleDateFormat.format(new Date(l));
-                msg = format + msg + "CLOCKINSUCCESSED";
-                if (!TextUtils.isEmpty(msg) && msg.contains("打卡 正常") || msg.contains("考勤打卡")) {
-                    RootShellCmdUtils.exec(CreateCmdUtils.createStopApp(PackageName.PN_DING_TALK));
-                    final String finalMsg = msg;
-                    handler.postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            String url = "mqqwpa://im/chat?chat_type=wpa&uin=1259583420";
-                            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
-                            String[] cmds = new String[11];
-                            cmds[0] = CreateCmdUtils.createEventTap(CreateCmdUtils.QQ_EDIT_TEXT);
-                            cmds[1] = CreateCmdUtils.createSleep(1);
-                            cmds[2] = CreateCmdUtils.createInputText(finalMsg);
-                            cmds[3] = CreateCmdUtils.createSleep(1);
-                            cmds[4] = CreateCmdUtils.createEventTap(CreateCmdUtils.QQ_SEND_BUTTON);
-                            cmds[5] = CreateCmdUtils.createSleep(1);
-                            cmds[6] = CreateCmdUtils.createEventKey(KeyEvent.KEYCODE_BACK);
-                            cmds[7] = CreateCmdUtils.createSleep(1);
-                            cmds[8] = CreateCmdUtils.createEventKey(KeyEvent.KEYCODE_BACK);
-                            cmds[9] = CreateCmdUtils.createSleep(1);
-                            cmds[10] = CreateCmdUtils.createEventKey(KeyEvent.KEYCODE_BACK);
-                            Log.i(TAG, "kai ---- onReceive cmds ----> " + Arrays.toString(cmds));
-                            RootShellCmdUtils.exec(cmds);
-                        }
-                    }, 3000);
-                   
+                String title = (String) extras.get("android.title");
+                String msg = (String) extras.get("android.text");
+                if (TextUtils.isEmpty(msg)){
+                    Toast.makeText(App.getContext(), "消息内容为空", Toast.LENGTH_SHORT).show();
+                } else {
+                    String currentTime = TimeUtils.getCurrentTimeStr();
+                    dealDingTalkMsg(msg);
                 }
             }
         };
+    }
+
+    private void dealDingTalkMsg(String msg) {
+        if (TextUtils.isEmpty(msg)) {
+            return;
+        }
+        switch (msg) {
+            case MsgConstant.DT_CLOCKING_IN:
+                RootShellCmdUtils.exec(CreateCmdUtils.createStopApp(PackageName.PN_DING_TALK));
+                final String finalMsg = "SUCCEED:" + TimeUtils.getCurrentTimeStr() + msg;
+                handler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        String url = "mqqwpa://im/chat?chat_type=wpa&uin=1259583420";
+                        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+                        String[] cmds = new String[11];
+                        cmds[0] = CreateCmdUtils.createEventTap(CreateCmdUtils.QQ_EDIT_TEXT);
+                        cmds[1] = CreateCmdUtils.createSleep(1);
+                        cmds[2] = CreateCmdUtils.createInputText(finalMsg);
+                        cmds[3] = CreateCmdUtils.createSleep(1);
+                        cmds[4] = CreateCmdUtils.createEventTap(CreateCmdUtils.QQ_SEND_BUTTON);
+                        cmds[5] = CreateCmdUtils.createSleep(1);
+                        cmds[6] = CreateCmdUtils.createEventKey(KeyEvent.KEYCODE_BACK);
+                        cmds[7] = CreateCmdUtils.createSleep(1);
+                        cmds[8] = CreateCmdUtils.createEventKey(KeyEvent.KEYCODE_BACK);
+                        cmds[9] = CreateCmdUtils.createSleep(1);
+                        cmds[10] = CreateCmdUtils.createEventKey(KeyEvent.KEYCODE_BACK);
+                        Log.i(TAG, "kai ---- onReceive cmds ----> " + Arrays.toString(cmds));
+                        RootShellCmdUtils.exec(cmds);
+                    }
+                }, 3000);
+                break;
+            default:
+                Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+                break;
+        }
+    }
+
+    private void dealQQMsg(String msg) {
+        if (TextUtils.isEmpty(msg)) {
+            return;
+        }
+        switch (msg) {
+            case MsgConstant.QQ_OPEN_DING_TALK:
+                handler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        RootShellCmdUtils.openApp(App.getContext(), PackageName.PN_DING_TALK);
+                    }
+                }, 1500);
+                break;
+            case MsgConstant.QQ_EXIT_DING_TALK:
+                handler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        RootShellCmdUtils.exec(CreateCmdUtils.createStopApp(PackageName.PN_DING_TALK));
+                    }
+                }, 1000);
+                break;
+            default:
+                Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+                break;
+        }
     }
 
     private void registerReceiver() {
@@ -144,7 +188,7 @@ public class MainActivity extends AppCompatActivity {
                         }
                     }, 5000);
                 } else {
-                    QQConstant.setNickName(receiveName);
+                    MsgConstant.setNickName(receiveName);
                     startNotificationListenService();
                 }
             }
