@@ -102,35 +102,32 @@ public class MainActivity extends AppCompatActivity {
         if (TextUtils.isEmpty(msg)) {
             return;
         }
-        switch (msg) {
-            case MsgConstant.DT_CLOCKING_IN:
-                RootShellCmdUtils.exec(CreateCmdUtils.createStopApp(PackageName.PN_DING_TALK));
-                final String finalMsg = "SUCCEED:" + TimeUtils.getCurrentTimeStr() + msg;
-                handler.postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        String url = "mqqwpa://im/chat?chat_type=wpa&uin=1259583420";
-                        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
-                        String[] cmds = new String[11];
-                        cmds[0] = CreateCmdUtils.createEventTap(CreateCmdUtils.QQ_EDIT_TEXT);
-                        cmds[1] = CreateCmdUtils.createSleep(1);
-                        cmds[2] = CreateCmdUtils.createInputText(finalMsg);
-                        cmds[3] = CreateCmdUtils.createSleep(1);
-                        cmds[4] = CreateCmdUtils.createEventTap(CreateCmdUtils.QQ_SEND_BUTTON);
-                        cmds[5] = CreateCmdUtils.createSleep(1);
-                        cmds[6] = CreateCmdUtils.createEventKey(KeyEvent.KEYCODE_BACK);
-                        cmds[7] = CreateCmdUtils.createSleep(1);
-                        cmds[8] = CreateCmdUtils.createEventKey(KeyEvent.KEYCODE_BACK);
-                        cmds[9] = CreateCmdUtils.createSleep(1);
-                        cmds[10] = CreateCmdUtils.createEventKey(KeyEvent.KEYCODE_BACK);
-                        Log.i(TAG, "kai ---- onReceive cmds ----> " + Arrays.toString(cmds));
-                        RootShellCmdUtils.exec(cmds);
-                    }
-                }, 3000);
-                break;
-            default:
-                Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
-                break;
+        if (msg.contains(MsgConstant.DT_CLOCKING_IN)) {
+            RootShellCmdUtils.exec(CreateCmdUtils.createStopApp(PackageName.PN_DING_TALK));
+            final String finalMsg = "SUCCEED:" + TimeUtils.getCurrentTimeStr() + msg;
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    String url = "mqqwpa://im/chat?chat_type=wpa&uin=1259583420";
+                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+                    String[] cmds = new String[11];
+                    cmds[0] = CreateCmdUtils.createEventTap(CreateCmdUtils.QQ_EDIT_TEXT);
+                    cmds[1] = CreateCmdUtils.createSleep(1);
+                    cmds[2] = CreateCmdUtils.createInputText(finalMsg);
+                    cmds[3] = CreateCmdUtils.createSleep(1);
+                    cmds[4] = CreateCmdUtils.createEventTap(CreateCmdUtils.QQ_SEND_BUTTON);
+                    cmds[5] = CreateCmdUtils.createSleep(1);
+                    cmds[6] = CreateCmdUtils.createEventKey(KeyEvent.KEYCODE_BACK);
+                    cmds[7] = CreateCmdUtils.createSleep(1);
+                    cmds[8] = CreateCmdUtils.createEventKey(KeyEvent.KEYCODE_BACK);
+                    cmds[9] = CreateCmdUtils.createSleep(1);
+                    cmds[10] = CreateCmdUtils.createEventKey(KeyEvent.KEYCODE_BACK);
+                    Log.i(TAG, "kai ---- onReceive cmds ----> " + Arrays.toString(cmds));
+                    RootShellCmdUtils.exec(cmds);
+                }
+            }, 3000);
+        } else {
+            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -138,26 +135,22 @@ public class MainActivity extends AppCompatActivity {
         if (TextUtils.isEmpty(msg)) {
             return;
         }
-        switch (msg) {
-            case MsgConstant.QQ_OPEN_DING_TALK:
-                handler.postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        RootShellCmdUtils.openApp(App.getContext(), PackageName.PN_DING_TALK);
-                    }
-                }, 1500);
-                break;
-            case MsgConstant.QQ_EXIT_DING_TALK:
-                handler.postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        RootShellCmdUtils.exec(CreateCmdUtils.createStopApp(PackageName.PN_DING_TALK));
-                    }
-                }, 1000);
-                break;
-            default:
-                Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
-                break;
+        if (msg.contains(MsgConstant.QQ_OPEN_DING_TALK)) {
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    RootShellCmdUtils.openApp(App.getContext(), PackageName.PN_DING_TALK);
+                }
+            }, 1500);
+        } else if (msg.contains(MsgConstant.QQ_EXIT_DING_TALK)) {
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    RootShellCmdUtils.exec(CreateCmdUtils.createStopApp(PackageName.PN_DING_TALK));
+                }
+            }, 1000);
+        } else {
+            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -210,6 +203,13 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+
+    private String getRunningActivityName(){
+        ActivityManager activityManager=(ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        String runningActivity=activityManager.getRunningTasks(1).get(0).topActivity.getClassName();
+        return runningActivity;
+    }
+    
 
     private void initView() {
         btnStartService = (Button) findViewById(R.id.btn_start_service);
