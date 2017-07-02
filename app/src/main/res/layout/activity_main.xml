@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.zkai.clockin.MainActivity"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    tools:context="com.zkai.clockin.MainActivity">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -24,16 +23,38 @@
             android:layout_width="match_parent"
             android:layout_height="50dp"
             android:background="@android:drawable/editbox_background_normal"
-            android:text="凯风"/>
+            android:text="凯风" />
     </LinearLayout>
 
     <Button
         android:id="@+id/btn_start_service"
         android:layout_width="match_parent"
         android:layout_height="50dp"
+        android:textColor="@color/colorGreen"
         android:text="START SERVICE" />
-    <TextView
-        android:id="@+id/tv_qq_msg"
+    <Button
+        android:id="@+id/btn_stop_service"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="50dp"
+        android:textColor="@color/colorRed"
+        android:text="STOP SERVICE" />
+
+    <Button
+        android:id="@+id/btn_test_adb"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:text="TEST ADB" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:id="@+id/tv_qq_msg"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="接收到的消息"/>
+    </ScrollView>
+
+
 </LinearLayout>

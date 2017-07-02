@@ -1,20 +1,21 @@
 package com.zkai.clockin;
 
 import android.app.ActivityManager;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
-import android.os.IBinder;
 import android.provider.Settings;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -22,10 +23,15 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.zkai.clockin.broadcast.AlarmBroadcastReceiver;
+import com.zkai.clockin.broadcast.CustomBroadcastAction;
 import com.zkai.clockin.service.NotificationCollectorService;
-import com.zkai.clockin.utils.QQConstant;
+import com.zkai.clockin.utils.CreateCmdUtils;
+import com.zkai.clockin.utils.MsgConstant;
+import com.zkai.clockin.utils.PackageName;
+import com.zkai.clockin.utils.RootShellCmdUtils;
+import com.zkai.clockin.utils.TimeUtils;
 
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
@@ -38,13 +44,120 @@ public class MainActivity extends AppCompatActivity {
     private EditText etReceiveName;
     private Intent notificationIntent;
     private TextView tvQQMsg;
+    private Button btnTestAdb;
+    private StringBuffer sbReceiveMsg;
+    private BroadcastReceiver qqReceiver;
+    private BroadcastReceiver dingReceiver;
+    private Handler handler;
+    private Button btnStopService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        handler = new Handler();
         initView();
         setListener();
+        initReceiver();
+        registerReceiver();
+        sbReceiveMsg = new StringBuffer();
+    }
+
+    private void initReceiver() {
+        qqReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                Bundle extras = intent.getExtras();
+                String title = (String) extras.get("android.title");
+                String msg = (String) extras.get("android.text");
+                if (TextUtils.isEmpty(msg)) {
+                    Toast.makeText(App.getContext(), "消息内容为空", Toast.LENGTH_SHORT).show();
+                } else {
+                    String currentTime = TimeUtils.getCurrentTimeStr();
+                    sbReceiveMsg.append("\nTime:").append(currentTime)
+                            .append("\nTitle:").append(title)
+                            .append("\nMsg:").append(msg);
+                    tvQQMsg.setText(sbReceiveMsg.toString());
+                    dealQQMsg(msg);
+                }
+            }
+        };
+        dingReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                Bundle extras = intent.getExtras();
+                String title = (String) extras.get("android.title");
+                String msg = (String) extras.get("android.text");
+                if (TextUtils.isEmpty(msg)){
+                    Toast.makeText(App.getContext(), "消息内容为空", Toast.LENGTH_SHORT).show();
+                } else {
+                    String currentTime = TimeUtils.getCurrentTimeStr();
+                    dealDingTalkMsg(msg);
+                }
+            }
+        };
+    }
+
+    private void dealDingTalkMsg(String msg) {
+        if (TextUtils.isEmpty(msg)) {
+            return;
+        }
+        if (msg.contains(MsgConstant.DT_CLOCKING_IN)) {
+            RootShellCmdUtils.exec(CreateCmdUtils.createStopApp(PackageName.PN_DING_TALK));
+            final String finalMsg = "SUCCEED:" + TimeUtils.getCurrentTimeStr() + msg;
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    String url = "mqqwpa://im/chat?chat_type=wpa&uin=1259583420";
+                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+                    String[] cmds = new String[11];
+                    cmds[0] = CreateCmdUtils.createEventTap(CreateCmdUtils.QQ_EDIT_TEXT);
+                    cmds[1] = CreateCmdUtils.createSleep(1);
+                    cmds[2] = CreateCmdUtils.createInputText(finalMsg);
+                    cmds[3] = CreateCmdUtils.createSleep(1);
+                    cmds[4] = CreateCmdUtils.createEventTap(CreateCmdUtils.QQ_SEND_BUTTON);
+                    cmds[5] = CreateCmdUtils.createSleep(1);
+                    cmds[6] = CreateCmdUtils.createEventKey(KeyEvent.KEYCODE_BACK);
+                    cmds[7] = CreateCmdUtils.createSleep(1);
+                    cmds[8] = CreateCmdUtils.createEventKey(KeyEvent.KEYCODE_BACK);
+                    cmds[9] = CreateCmdUtils.createSleep(1);
+                    cmds[10] = CreateCmdUtils.createEventKey(KeyEvent.KEYCODE_BACK);
+                    Log.i(TAG, "kai ---- onReceive cmds ----> " + Arrays.toString(cmds));
+                    RootShellCmdUtils.exec(cmds);
+                }
+            }, 3000);
+        } else {
+            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void dealQQMsg(String msg) {
+        if (TextUtils.isEmpty(msg)) {
+            return;
+        }
+        if (msg.contains(MsgConstant.QQ_OPEN_DING_TALK)) {
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    RootShellCmdUtils.openApp(App.getContext(), PackageName.PN_DING_TALK);
+                }
+            }, 1500);
+        } else if (msg.contains(MsgConstant.QQ_EXIT_DING_TALK)) {
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    RootShellCmdUtils.exec(CreateCmdUtils.createStopApp(PackageName.PN_DING_TALK));
+                }
+            }, 1000);
+        } else {
+            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void registerReceiver() {
+        registerReceiver(qqReceiver, new IntentFilter(CustomBroadcastAction.ACTION_RECEIVE_QQ_MSG));
+        registerReceiver(dingReceiver, new IntentFilter(CustomBroadcastAction.ACTION_RECEIVE_DING_TALK_MSG));
+
     }
 
     private void setListener() {
@@ -68,16 +181,41 @@ public class MainActivity extends AppCompatActivity {
                         }
                     }, 5000);
                 } else {
-                    QQConstant.setNickName(receiveName);
+                    MsgConstant.setNickName(receiveName);
                     startNotificationListenService();
                 }
             }
         });
+        btnStopService.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (notificationIntent != null) {
+                    stopService(notificationIntent);
+                    Toast.makeText(MainActivity.this, "已关闭服务", Toast.LENGTH_LONG).show();
+                }
+            }
+        });
+        btnTestAdb.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String s = RootShellCmdUtils.execStartApp(PackageName.PN_DING_TALK);
+                Log.i(TAG,"kai ---- onClick s ----> " + s);
+            }
+        });
     }
+
+    private String getRunningActivityName(){
+        ActivityManager activityManager=(ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        String runningActivity=activityManager.getRunningTasks(1).get(0).topActivity.getClassName();
+        return runningActivity;
+    }
+    
 
     private void initView() {
         btnStartService = (Button) findViewById(R.id.btn_start_service);
+        btnStopService = (Button) findViewById(R.id.btn_stop_service);
         etReceiveName = (EditText) findViewById(R.id.et_receive_name);
+        btnTestAdb = (Button) findViewById(R.id.btn_test_adb);
         tvQQMsg = (TextView) findViewById(R.id.tv_qq_msg);
     }
 
@@ -115,7 +253,6 @@ public class MainActivity extends AppCompatActivity {
         }
         return false;
     }
-
 
     private void openNotificationAccess() {
         startActivity(new Intent(ACTION_NOTIFICATION_LISTENER_SETTINGS));
@@ -163,5 +300,14 @@ public class MainActivity extends AppCompatActivity {
         pm.setComponentEnabledSetting(new ComponentName(this, NotificationCollectorService.class),
                 PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP);
     }
+
+//    public void clip() {
+//        // 从API11开始android推荐使用android.content.ClipboardManager
+//        // 为了兼容低版本我们这里使用旧版的android.text.ClipboardManager，虽然提示deprecated，但不影响使用。
+//        ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+//        // 将文本内容放到系统剪贴板里。
+//        cm.setPrimaryClip(tvMsg.getText());
+//        Toast.makeText(this, "复制成功，可以发给朋友们了。", Toast.LENGTH_LONG).show();
+//    }
 
 }

@@ -7,3 +7,7 @@
 /build
 /captures
 .externalNativeBuild
+build.gradle
+.idea
+gradle
+.idea/inspectionProfiles/
