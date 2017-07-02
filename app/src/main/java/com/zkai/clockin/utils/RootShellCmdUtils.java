@@ -7,6 +7,7 @@ import android.util.Log;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.ArrayList;
 
 /**
  * Copyright (c) 2017,xxxxxx All rights reserved.
@@ -47,7 +48,31 @@ public class RootShellCmdUtils {
     
     public static void exec(String[] commands) {
         Log.i(TAG,"kai ---- exec commands ----> " + commands);
-        
+        try {
+            os = Runtime.getRuntime().exec("su").getOutputStream();
+            for (String command : commands) {
+                if (command == null) {
+                    continue;
+                }
+                os.write(command.getBytes());
+                os.flush();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (os != null) {
+                    os.close();
+                    os = null;
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public static void exec(ArrayList<String> commands) {
+        Log.i(TAG, "kai ---- exec commands ----> " + commands);
         try {
             os = Runtime.getRuntime().exec("su").getOutputStream();
             for (String command : commands) {

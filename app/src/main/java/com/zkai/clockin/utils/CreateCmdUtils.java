@@ -39,6 +39,7 @@ public class CreateCmdUtils {
         text = PinYin.getPinYin(text);
         text = dropChinese(text);
         text = text.replace(" ", "");
+        Log.i(TAG, "createInputText: " + text);
         return "input text " + text + "\n";
     }
     public static String createSleep(int sec) {

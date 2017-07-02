@@ -39,43 +39,7 @@ public class NotificationCollectorService extends NotificationListenerService {
     @Override
     public void onNotificationRemoved(StatusBarNotification sbn) {
         Log.i("kai", "remove" + "-----" + sbn.getPackageName());
-
     }
-
-
-//    @TargetApi(Build.VERSION_CODES.KITKAT)
-//    private void dealDingMsg(StatusBarNotification sbn) {
-//        String title = (String) sbn.getNotification().extras.get("android.title");
-//        String msg = (String) sbn.getNotification().extras.get("android.text");
-//        Log.i(TAG, "kai ---- dealDingMsg title ----> " + title);
-//        Log.i(TAG, "kai ---- dealDingMsg msg ----> " + msg);
-//        if (TextUtils.isEmpty(title)) {
-//            return;
-//        }
-//        sendBroadcastWithArgs(CustomBroadcastAction.ACTION_RECEIVE_DING_TALK_MSG, title, msg);
-//    }
-//
-//    @TargetApi(Build.VERSION_CODES.KITKAT)
-//    private void dealQQMsg(StatusBarNotification sbn) {
-//        String title = (String) sbn.getNotification().extras.get("android.title");
-//        String msg = (String) sbn.getNotification().extras.get("android.text");
-//        Log.i(TAG, "kai ---- dealQQMsg title ----> " + title);
-//        Log.i(TAG, "kai ---- dealQQMsg msg ----> " + msg);
-//        if (TextUtils.isEmpty(title)) {
-//            return;
-//        }
-//        if (title.contains(MsgConstant.nickName)) {
-//                sendBroadcastWithArgs(CustomBroadcastAction.ACTION_RECEIVE_QQ_MSG, title, msg);
-//            if (MsgConstant.QQ_OPEN_DING_TALK.equals(msg)) {
-//            } else if (MsgConstant.QQ_EXIT_DING_TALK.equals(msg)) {
-//                RootShellCmdUtils.exec(CreateCmdUtils.createStopApp(PackageName.PN_DING_TALK));
-//                // TODO: 2017/6/29 退出钉钉 by Z.kai
-//
-//            } else if (1 == 2) {
-//                RootShellCmdUtils.exec(CreateCmdUtils.createEventTap(300, 300));
-//            }
-//        }
-//    }
 
     private void sendBroadcastWithArgs(String action, Bundle bundle) {
         Intent intent = new Intent();

@@ -9,10 +9,10 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Handler;
 import android.provider.Settings;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -33,6 +33,8 @@ import com.zkai.clockin.utils.TimeUtils;
 
 import java.util.Arrays;
 import java.util.List;
+
+import static com.zkai.clockin.utils.CreateCmdUtils.createSleep;
 
 public class MainActivity extends AppCompatActivity {
     
@@ -108,22 +110,7 @@ public class MainActivity extends AppCompatActivity {
             handler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    String url = "mqqwpa://im/chat?chat_type=wpa&uin=1259583420";
-                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
-                    String[] cmds = new String[11];
-                    cmds[0] = CreateCmdUtils.createEventTap(CreateCmdUtils.QQ_EDIT_TEXT);
-                    cmds[1] = CreateCmdUtils.createSleep(1);
-                    cmds[2] = CreateCmdUtils.createInputText(finalMsg);
-                    cmds[3] = CreateCmdUtils.createSleep(1);
-                    cmds[4] = CreateCmdUtils.createEventTap(CreateCmdUtils.QQ_SEND_BUTTON);
-                    cmds[5] = CreateCmdUtils.createSleep(1);
-                    cmds[6] = CreateCmdUtils.createEventKey(KeyEvent.KEYCODE_BACK);
-                    cmds[7] = CreateCmdUtils.createSleep(1);
-                    cmds[8] = CreateCmdUtils.createEventKey(KeyEvent.KEYCODE_BACK);
-                    cmds[9] = CreateCmdUtils.createSleep(1);
-                    cmds[10] = CreateCmdUtils.createEventKey(KeyEvent.KEYCODE_BACK);
-                    Log.i(TAG, "kai ---- onReceive cmds ----> " + Arrays.toString(cmds));
-                    RootShellCmdUtils.exec(cmds);
+                    sendToQQ(finalMsg);
                 }
             }, 3000);
         } else {
@@ -149,8 +136,56 @@ public class MainActivity extends AppCompatActivity {
                     RootShellCmdUtils.exec(CreateCmdUtils.createStopApp(PackageName.PN_DING_TALK));
                 }
             }, 1000);
+        } else if (msg.contains(MsgConstant.QQ_GET_FOCUSED_ACTIVITY)) {
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    sendToQQ(getRunningActivityName());
+                }
+            }, 1500);
         } else {
             Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    private void sendToQQ(final String msg) {
+        RootShellCmdUtils.exec(CreateCmdUtils.createStopApp(PackageName.PN_DING_TALK));
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                String url = "mqqwpa://im/chat?chat_type=wpa&uin=1259583420";
+                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+                String[] cmds = new String[5];
+                cmds[0] = CreateCmdUtils.createEventTap(CreateCmdUtils.QQ_EDIT_TEXT);
+                cmds[1] = createSleep(1);
+                cmds[2] = CreateCmdUtils.createInputText(msg);
+                cmds[3] = createSleep(1);
+                cmds[4] = CreateCmdUtils.createEventTap(CreateCmdUtils.QQ_SEND_BUTTON);
+                Log.i(TAG, "kai ---- onReceive cmds ----> " + Arrays.toString(cmds));
+                RootShellCmdUtils.exec(cmds);
+            }
+        }, 3000);
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                returnToThis();
+            }
+        }, 13000);
+    }
+
+    private void returnToThis() {
+        String runningActivityName = getRunningActivityName();
+        Log.i(TAG, "returnToThis: " + runningActivityName.equals(MsgConstant.ACTIVITY_MYSELF));
+        if (runningActivityName.equals(MsgConstant.ACTIVITY_PHONE_HOME)) {
+            RootShellCmdUtils.openApp(App.getContext(), getPackageName());
+        } else if (!runningActivityName.equals(MsgConstant.ACTIVITY_MYSELF)) {
+            RootShellCmdUtils.exec(CreateCmdUtils.createEventKey(KeyEvent.KEYCODE_BACK));
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    returnToThis();
+                }
+            }, 1500);
         }
     }
 
@@ -204,9 +239,10 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private String getRunningActivityName(){
-        ActivityManager activityManager=(ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
-        String runningActivity=activityManager.getRunningTasks(1).get(0).topActivity.getClassName();
+    private String getRunningActivityName() {
+        ActivityManager activityManager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        String runningActivity = activityManager.getRunningTasks(1).get(0).topActivity.getClassName();
+        Log.i(TAG, "getRunningActivityName() runningActivity :" + runningActivity);
         return runningActivity;
     }
     
