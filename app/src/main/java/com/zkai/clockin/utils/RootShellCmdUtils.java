@@ -18,7 +18,6 @@ import java.util.ArrayList;
 
 public class RootShellCmdUtils {
     private static final String TAG = "RootShellCmdUtils";
-    private static RootShellCmdUtils rootShellCmd;
     private static OutputStream os;
 
     /**
@@ -100,7 +99,6 @@ public class RootShellCmdUtils {
         String command = "dumpsys activity | findstr \"mFocusedActivity\"";
     }
 
-
     public static void openApp(Context context, String packageName) {
         PackageManager packageManager = context.getPackageManager();
         Intent intent = packageManager.getLaunchIntentForPackage(packageName);
@@ -108,39 +106,6 @@ public class RootShellCmdUtils {
             return;
         }
         context.startActivity(intent);
-    }
-
-    public static String execStartApp(String packageName) {
-//        try {
-            if (rootShellCmd == null) {
-                rootShellCmd = new RootShellCmdUtils();
-            }
-//            rootShellCmd.simulateKey(KeyEvent.KEYCODE_BACK);
-//            simulateTap(300,300);
-        
-//            Process p = Runtime.getRuntime().exec("su");
-//            String adb = "adb shell am start -n \"%s\"";
-////            String command = String.format(adb, packageName);
-////            String command = "am start -n com.alibaba.android.rimet/com.alibaba.lightapp.runtime.activity.CommonWebViewActivity";
-//            String command = "dumpsys activity | findstr \"mFocusedActivity\"";
-//            Process process = Runtime.getRuntime().exec(command);
-//            
-//            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-//            int read;
-//            char[] buffer = new char[4096];
-//            StringBuffer output = new StringBuffer();
-//            while ((read = reader.read(buffer)) > 0) {
-//                output.append(buffer, 0, read);
-//            }
-//            reader.close();
-//            process.waitFor();
-//            return output.toString();
-            return "";
-//        } catch (IOException e) {
-//            throw new RuntimeException(e);
-//        } catch (InterruptedException e) {
-//            throw new RuntimeException(e);
-//        }
     }
 
 }

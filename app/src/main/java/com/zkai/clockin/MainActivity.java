@@ -19,6 +19,7 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -73,7 +74,7 @@ public class MainActivity extends AppCompatActivity {
                 String title = (String) extras.get("android.title");
                 String msg = (String) extras.get("android.text");
                 if (TextUtils.isEmpty(msg)) {
-                    Toast.makeText(App.getContext(), "消息内容为空", Toast.LENGTH_SHORT).show();
+                    
                 } else {
                     String currentTime = TimeUtils.getCurrentTimeStr();
                     sbReceiveMsg.append("\nTime:").append(currentTime)
@@ -81,6 +82,7 @@ public class MainActivity extends AppCompatActivity {
                             .append("\nMsg:").append(msg);
                     tvQQMsg.setText(sbReceiveMsg.toString());
                     dealQQMsg(msg);
+                    dealDingTalkMsg(msg);
                 }
             }
         };
@@ -90,8 +92,9 @@ public class MainActivity extends AppCompatActivity {
                 Bundle extras = intent.getExtras();
                 String title = (String) extras.get("android.title");
                 String msg = (String) extras.get("android.text");
+                Log.i(TAG,"kai ---- onReceive msg ----> " + msg);
                 if (TextUtils.isEmpty(msg)){
-                    Toast.makeText(App.getContext(), "消息内容为空", Toast.LENGTH_SHORT).show();
+                    
                 } else {
                     String currentTime = TimeUtils.getCurrentTimeStr();
                     dealDingTalkMsg(msg);
@@ -105,7 +108,6 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
         if (msg.contains(MsgConstant.DT_CLOCKING_IN)) {
-            RootShellCmdUtils.exec(CreateCmdUtils.createStopApp(PackageName.PN_DING_TALK));
             final String finalMsg = "SUCCEED:" + TimeUtils.getCurrentTimeStr() + msg;
             handler.postDelayed(new Runnable() {
                 @Override
@@ -113,8 +115,19 @@ public class MainActivity extends AppCompatActivity {
                     sendToQQ(finalMsg);
                 }
             }, 3000);
+        } else if (msg.contains(MsgConstant.DT_TEST)) {
+            final String finalMsg = TimeUtils.getCurrentTimeStr() + msg;
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    int identifier = getResources().getIdentifier("quicklink_image", "id", "com.tencent.padbrowser");
+                    ImageView viewById = (ImageView) findViewById(identifier);
+                    Log.i(TAG,"kai ---- initReceiver viewById ----> " + viewById);
+                    sendToQQ(finalMsg);
+                }
+            }, 1500);
         } else {
-            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+            
         }
     }
 
@@ -144,7 +157,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             }, 1500);
         } else {
-            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+            
         }
     }
     
@@ -159,7 +172,7 @@ public class MainActivity extends AppCompatActivity {
                 cmds[0] = CreateCmdUtils.createEventTap(CreateCmdUtils.QQ_EDIT_TEXT);
                 cmds[1] = createSleep(1);
                 cmds[2] = CreateCmdUtils.createInputText(msg);
-                cmds[3] = createSleep(1);
+                cmds[3] = createSleep(2);
                 cmds[4] = CreateCmdUtils.createEventTap(CreateCmdUtils.QQ_SEND_BUTTON);
                 Log.i(TAG, "kai ---- onReceive cmds ----> " + Arrays.toString(cmds));
                 RootShellCmdUtils.exec(cmds);
@@ -170,7 +183,7 @@ public class MainActivity extends AppCompatActivity {
             public void run() {
                 returnToThis();
             }
-        }, 13000);
+        }, 15000);
     }
 
     private void returnToThis() {
@@ -233,8 +246,7 @@ public class MainActivity extends AppCompatActivity {
         btnTestAdb.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String s = RootShellCmdUtils.execStartApp(PackageName.PN_DING_TALK);
-                Log.i(TAG,"kai ---- onClick s ----> " + s);
+                
             }
         });
     }

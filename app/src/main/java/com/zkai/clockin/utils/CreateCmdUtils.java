@@ -14,7 +14,11 @@ public class CreateCmdUtils {
     private static final String TAG = "CreateCmdUtils";
     public static final int[] QQ_EDIT_TEXT = {300, 1165};
     public static final int[] QQ_SEND_BUTTON = {662, 662};
-    
+
+    static {
+
+    }
+
     public static String createEventKey(int keycode) {
         return "input keyevent " + keycode + "\n";
     }
@@ -42,6 +46,7 @@ public class CreateCmdUtils {
         Log.i(TAG, "createInputText: " + text);
         return "input text " + text + "\n";
     }
+
     public static String createSleep(int sec) {
         if (sec <= 0) {
             return null;
@@ -56,14 +61,13 @@ public class CreateCmdUtils {
     public static String createOpenQQ() {
         return "am start -n com.tencent.mobileqq/.activity.SplashActivity";
     }
-    
-    
-    
+
     /**
-     *  去除中文
-     *  @param str
-     *  @return
-     * */
+     * 去除中文
+     *
+     * @param str 
+     * @return
+     */
     public static String dropChinese(String str) {
         String result = "";
         char[] ch = str.toCharArray();
@@ -75,7 +79,7 @@ public class CreateCmdUtils {
         }
         return result;
     }
-    
+
     /**
      * 判断是否为中文字符
      *

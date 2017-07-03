@@ -21,10 +21,8 @@ public class AlarmBroadcastReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         String action = intent.getAction();
-//        CmdUtils.execStartApp(CmdUtils.DING_TALK_PACKAGE_NAME);
         Log.i(TAG,"kai ---- onReceive action ----> " + action);
         RootShellCmdUtils.openApp(App.getContext(), PackageName.PN_DING_TALK);
-        
     }
     
 }
