@@ -38,7 +38,7 @@ import java.util.List;
 import static com.zkai.clockin.utils.CreateCmdUtils.createSleep;
 
 public class MainActivity extends AppCompatActivity {
-    
+
     private static final String TAG = "MainActivity";
 
     private static final String ACTION_NOTIFICATION_LISTENER_SETTINGS = "android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS";
@@ -53,6 +53,7 @@ public class MainActivity extends AppCompatActivity {
     private BroadcastReceiver dingReceiver;
     private Handler handler;
     private Button btnStopService;
+    private final int MAX_RE_SEND_NUM = 10;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,7 +75,7 @@ public class MainActivity extends AppCompatActivity {
                 String title = (String) extras.get("android.title");
                 String msg = (String) extras.get("android.text");
                 if (TextUtils.isEmpty(msg)) {
-                    
+
                 } else {
                     String currentTime = TimeUtils.getCurrentTimeStr();
                     sbReceiveMsg.append("\nTime:").append(currentTime)
@@ -92,9 +93,9 @@ public class MainActivity extends AppCompatActivity {
                 Bundle extras = intent.getExtras();
                 String title = (String) extras.get("android.title");
                 String msg = (String) extras.get("android.text");
-                Log.i(TAG,"kai ---- onReceive msg ----> " + msg);
-                if (TextUtils.isEmpty(msg)){
-                    
+                Log.i(TAG, "kai ---- onReceive msg ----> " + msg);
+                if (TextUtils.isEmpty(msg)) {
+
                 } else {
                     String currentTime = TimeUtils.getCurrentTimeStr();
                     dealDingTalkMsg(msg);
@@ -112,7 +113,7 @@ public class MainActivity extends AppCompatActivity {
             handler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    sendToQQ(finalMsg);
+                    sendToQQ(finalMsg, 0);
                 }
             }, 3000);
         } else if (msg.contains(MsgConstant.DT_TEST)) {
@@ -120,14 +121,11 @@ public class MainActivity extends AppCompatActivity {
             handler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    int identifier = getResources().getIdentifier("quicklink_image", "id", "com.tencent.padbrowser");
-                    ImageView viewById = (ImageView) findViewById(identifier);
-                    Log.i(TAG,"kai ---- initReceiver viewById ----> " + viewById);
-                    sendToQQ(finalMsg);
+                    sendToQQ(finalMsg, 0);
                 }
             }, 1500);
         } else {
-            
+
         }
     }
 
@@ -153,21 +151,32 @@ public class MainActivity extends AppCompatActivity {
             handler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    sendToQQ(getRunningActivityName());
+                    sendToQQ(getRunningActivityName(), 0);
                 }
             }, 1500);
         } else {
-            
+
         }
     }
-    
-    private void sendToQQ(final String msg) {
+
+    private void sendToQQ(final String msg, int tryNum) {
         RootShellCmdUtils.exec(CreateCmdUtils.createStopApp(PackageName.PN_DING_TALK));
+        final int tryNum1 = ++tryNum;
         handler.postDelayed(new Runnable() {
             @Override
             public void run() {
                 String url = "mqqwpa://im/chat?chat_type=wpa&uin=1259583420";
                 startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+                String runningActivityName = getRunningActivityName();
+                if (TextUtils.isEmpty(runningActivityName) || !runningActivityName.contains(PackageName.PN_QQ)) {
+                    if (tryNum1 > MAX_RE_SEND_NUM) {
+                        Log.i(TAG, "超过重新发送最大次数 " + tryNum1);
+                        return;
+                    }
+                    Log.i(TAG, "第 " + tryNum1 + " 次重新发送到QQ ");
+                    sendToQQ(msg, tryNum1);
+                    return;
+                }
                 String[] cmds = new String[5];
                 cmds[0] = CreateCmdUtils.createEventTap(CreateCmdUtils.QQ_EDIT_TEXT);
                 cmds[1] = createSleep(1);
@@ -213,9 +222,9 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 boolean serviceRunning = isServiceRunning(MainActivity.this, "com.zkai.clockin.service.NotificationCollectorService");
-                Log.i(TAG,"kai ---- onClick serviceRunning ----> " + serviceRunning);
+                Log.i(TAG, "kai ---- onClick serviceRunning ----> " + serviceRunning);
                 String receiveName = etReceiveName.getText().toString();
-                if (TextUtils.isEmpty(receiveName)){
+                if (TextUtils.isEmpty(receiveName)) {
                     Toast.makeText(MainActivity.this, "名字不能为空", Toast.LENGTH_LONG).show();
                     return;
                 }
@@ -246,7 +255,7 @@ public class MainActivity extends AppCompatActivity {
         btnTestAdb.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                
+
             }
         });
     }
@@ -257,7 +266,6 @@ public class MainActivity extends AppCompatActivity {
         Log.i(TAG, "getRunningActivityName() runningActivity :" + runningActivity);
         return runningActivity;
     }
-    
 
     private void initView() {
         btnStartService = (Button) findViewById(R.id.btn_start_service);
@@ -275,11 +283,11 @@ public class MainActivity extends AppCompatActivity {
         filter.addAction("com.android.deskclock.ALARM_DONE");
         registerReceiver(alarmBroadcastReceiver, filter);
     }
-    
-    private void applyAuth(){
+
+    private void applyAuth() {
         setContentView(R.layout.activity_main);
-        String string = Settings.Secure.getString(getContentResolver(),"enabled_notification_listeners");
-        if (TextUtils.isEmpty(string)||!string.contains(NotificationCollectorService.class.getName())) {
+        String string = Settings.Secure.getString(getContentResolver(), "enabled_notification_listeners");
+        if (TextUtils.isEmpty(string) || !string.contains(NotificationCollectorService.class.getName())) {
             startActivity(new Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS"));
         }
     }
@@ -308,7 +316,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void startNotificationListenService() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
-            notificationIntent = new Intent(MainActivity.this,NotificationCollectorService.class);
+            notificationIntent = new Intent(MainActivity.this, NotificationCollectorService.class);
             startService(notificationIntent);
             toggleNotificationListenerService();
             Toast.makeText(MainActivity.this, "开启成功", Toast.LENGTH_SHORT).show();

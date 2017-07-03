@@ -5,7 +5,10 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.util.Log;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.ArrayList;
 
@@ -25,10 +28,12 @@ public class RootShellCmdUtils {
      *
      * @param cmd adb 命令，eg:input keyevent 4
      */
-    public static void exec(String cmd) {
-        Log.i(TAG,"kai ---- exec cmd ----> " + cmd);
+    public static boolean exec(String cmd) {
+        Log.i(TAG, " ---- exec cmd ----> " + cmd);
+        Process su = null;
         try {
-            os = Runtime.getRuntime().exec("su").getOutputStream();
+            su = Runtime.getRuntime().exec("su");
+            os = su.getOutputStream();
             os.write(cmd.getBytes());
             os.flush();
         } catch (Exception e) {
@@ -43,41 +48,46 @@ public class RootShellCmdUtils {
                 e.printStackTrace();
             }
         }
-    }    
-    
-    public static void exec(String[] commands) {
-        Log.i(TAG,"kai ---- exec commands ----> " + commands);
+        // 处理结果
+        boolean result = false;
         try {
-            os = Runtime.getRuntime().exec("su").getOutputStream();
-            for (String command : commands) {
-                if (command == null) {
-                    continue;
+            InputStream input;
+            if (su != null) {
+                input = su.getInputStream();
+                BufferedReader in = new BufferedReader(new InputStreamReader(input));
+                StringBuffer stringBuffer = new StringBuffer();
+                String content = "";
+                while ((content = in.readLine()) != null) {
+                    stringBuffer.append(content);
                 }
-                os.write(command.getBytes());
-                os.flush();
+                Log.d(TAG, "result content : " + stringBuffer.toString());
+                int status = su.waitFor();
+                if (status == 0) {
+                    result = true;
+                } else {
+                    result = false;
+                }
             }
-        } catch (Exception e) {
+        } catch (IOException e) {
+            Log.e(TAG, "kai ---- exec IO异常 ----> ");
             e.printStackTrace();
-        } finally {
-            try {
-                if (os != null) {
-                    os.close();
-                    os = null;
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+        } catch (InterruptedException e) {
+            Log.e(TAG, "kai ---- exec InterruptedException异常 ----> ");
+            e.printStackTrace();
         }
+        return result;
     }
 
-    public static void exec(ArrayList<String> commands) {
-        Log.i(TAG, "kai ---- exec commands ----> " + commands);
+    public static boolean exec(String[] commands) {
+        Process su = null;
         try {
-            os = Runtime.getRuntime().exec("su").getOutputStream();
+            su = Runtime.getRuntime().exec("su");
+            os = su.getOutputStream();
             for (String command : commands) {
                 if (command == null) {
                     continue;
                 }
+                Log.i(TAG, "---- exec command ----> " + command);
                 os.write(command.getBytes());
                 os.flush();
             }
@@ -93,6 +103,69 @@ public class RootShellCmdUtils {
                 e.printStackTrace();
             }
         }
+        // 处理结果
+        boolean result = false;
+        try {
+            InputStream input = null;
+            Log.i(TAG, "kai ---- exec su ----> " + su);
+            if (su != null) {
+                int status = su.waitFor();
+                if (status == 0) {
+                    result = true;
+                } else {
+                    result = false;
+                }
+            }
+        } catch (InterruptedException e) {
+            Log.i(TAG, "kai ---- exec InterruptedException异常 ----> ");
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    public static boolean exec(ArrayList<String> commands) {
+        Process su = null;
+        try {
+            su = Runtime.getRuntime().exec("su");
+            os = su.getOutputStream();
+            for (String command : commands) {
+                if (command == null) {
+                    continue;
+                }
+                Log.i(TAG, "---- exec command ----> " + command);
+                os.write(command.getBytes());
+                os.flush();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (os != null) {
+                    os.close();
+                    os = null;
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        // 处理结果
+        boolean result = false;
+        try {
+            InputStream input = null;
+            if (su != null) {
+                int status = su.waitFor();
+                if (status == 0) {
+                    result = true;
+                } else {
+                    result = false;
+                }
+            }
+        } catch (InterruptedException e) {
+            Log.d(TAG, "kai ---- exec InterruptedException异常 ----> ");
+            e.printStackTrace();
+        }
+        return result;
     }
 
     public final void checkFocusActivity() {
