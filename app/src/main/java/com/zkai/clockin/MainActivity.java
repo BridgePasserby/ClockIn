@@ -19,6 +19,7 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -26,7 +27,7 @@ import com.zkai.clockin.broadcast.AlarmBroadcastReceiver;
 import com.zkai.clockin.broadcast.CustomBroadcastAction;
 import com.zkai.clockin.service.NotificationCollectorService;
 import com.zkai.clockin.utils.CreateCmdUtils;
-import com.zkai.clockin.utils.Constant;
+import com.zkai.clockin.utils.MsgConstant;
 import com.zkai.clockin.utils.PackageName;
 import com.zkai.clockin.utils.RootShellCmdUtils;
 import com.zkai.clockin.utils.TimeUtils;
@@ -107,7 +108,7 @@ public class MainActivity extends AppCompatActivity {
         if (TextUtils.isEmpty(msg)) {
             return;
         }
-        if (msg.contains(Constant.MSG_DT_CLOCKING_IN)) {
+        if (msg.contains(MsgConstant.DT_CLOCKING_IN)) {
             final String finalMsg = "SUCCEED:" + TimeUtils.getCurrentTimeStr() + msg;
             handler.postDelayed(new Runnable() {
                 @Override
@@ -115,7 +116,7 @@ public class MainActivity extends AppCompatActivity {
                     sendToQQ(finalMsg, 0);
                 }
             }, 3000);
-        } else if (msg.contains(Constant.MSG_DT_TEST)) {
+        } else if (msg.contains(MsgConstant.DT_TEST)) {
             final String finalMsg = TimeUtils.getCurrentTimeStr() + msg;
             handler.postDelayed(new Runnable() {
                 @Override
@@ -132,21 +133,21 @@ public class MainActivity extends AppCompatActivity {
         if (TextUtils.isEmpty(msg)) {
             return;
         }
-        if (msg.contains(Constant.MSG_QQ_OPEN_DING_TALK)) {
+        if (msg.contains(MsgConstant.QQ_OPEN_DING_TALK)) {
             handler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
                     RootShellCmdUtils.openApp(App.getContext(), PackageName.PN_DING_TALK);
                 }
             }, 1500);
-        } else if (msg.contains(Constant.MSG_QQ_EXIT_DING_TALK)) {
+        } else if (msg.contains(MsgConstant.QQ_EXIT_DING_TALK)) {
             handler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
                     RootShellCmdUtils.exec(CreateCmdUtils.createStopApp(PackageName.PN_DING_TALK));
                 }
             }, 1000);
-        } else if (msg.contains(Constant.MSG_QQ_GET_FOCUSED_ACTIVITY)) {
+        } else if (msg.contains(MsgConstant.QQ_GET_FOCUSED_ACTIVITY)) {
             handler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
@@ -177,11 +178,11 @@ public class MainActivity extends AppCompatActivity {
                     return;
                 }
                 String[] cmds = new String[5];
-                cmds[0] = CreateCmdUtils.createEventTap(Constant.getTapPositionQqMsgText());
+                cmds[0] = CreateCmdUtils.createEventTap(CreateCmdUtils.QQ_EDIT_TEXT);
                 cmds[1] = createSleep(1);
                 cmds[2] = CreateCmdUtils.createInputText(msg);
                 cmds[3] = createSleep(2);
-                cmds[4] = CreateCmdUtils.createEventTap(Constant.getTapPositionQqSendButton());
+                cmds[4] = CreateCmdUtils.createEventTap(CreateCmdUtils.QQ_SEND_BUTTON);
                 Log.i(TAG, "kai ---- onReceive cmds ----> " + Arrays.toString(cmds));
                 RootShellCmdUtils.exec(cmds);
             }
@@ -196,10 +197,10 @@ public class MainActivity extends AppCompatActivity {
 
     private void returnToThis() {
         String runningActivityName = getRunningActivityName();
-        Log.i(TAG, "returnToThis: " + runningActivityName.equals(Constant.ACTIVITY_MYSELF));
-        if (runningActivityName.equals(Constant.ACTIVITY_PHONE_HOME)) {
+        Log.i(TAG, "returnToThis: " + runningActivityName.equals(MsgConstant.ACTIVITY_MYSELF));
+        if (runningActivityName.equals(MsgConstant.ACTIVITY_PHONE_HOME)) {
             RootShellCmdUtils.openApp(App.getContext(), getPackageName());
-        } else if (!runningActivityName.equals(Constant.ACTIVITY_MYSELF)) {
+        } else if (!runningActivityName.equals(MsgConstant.ACTIVITY_MYSELF)) {
             RootShellCmdUtils.exec(CreateCmdUtils.createEventKey(KeyEvent.KEYCODE_BACK));
             handler.postDelayed(new Runnable() {
                 @Override
@@ -237,7 +238,7 @@ public class MainActivity extends AppCompatActivity {
                         }
                     }, 5000);
                 } else {
-                    Constant.setNickName(receiveName);
+                    MsgConstant.setNickName(receiveName);
                     startNotificationListenService();
                 }
             }

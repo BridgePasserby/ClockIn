@@ -12,6 +12,12 @@ import android.util.Log;
 
 public class CreateCmdUtils {
     private static final String TAG = "CreateCmdUtils";
+    public static final int[] QQ_EDIT_TEXT = {300, 1165};
+    public static final int[] QQ_SEND_BUTTON = {662, 662};
+
+    static {
+
+    }
 
     public static String createEventKey(int keycode) {
         return "input keyevent " + keycode + "\n";
@@ -27,7 +33,7 @@ public class CreateCmdUtils {
         }
         int x = position[0];
         int y = position[1];
-        return createEventTap(x, y);
+        return "input tap " + x + " " + y + "\n";
     }
 
     public static String createInputText(String text) {
